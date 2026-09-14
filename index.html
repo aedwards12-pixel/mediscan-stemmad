@@ -1,0 +1,1043 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MedScan AI - STEM Pill Scanner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'cursive', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-short': 'bounceShort 0.4s ease-in-out',
+            'spin-slow': 'spin 8s linear infinite',
+          },
+          keyframes: {
+            bounceShort: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.12)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scan reticle & glow transitions */
+    .reticle-ring {
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9),
+                  0 0 24px rgba(0, 0, 0, 0.5),
+                  inset 0 0 12px rgba(255, 255, 255, 0.3);
+    }
+    .candy-shadow {
+      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+    }
+    .glass-panel {
+      background: rgba(18, 18, 24, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    /* Hide scrollbars for clean mobile feel */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen select-none overflow-x-hidden flex flex-col justify-between">
+
+  <!-- ========================================================
+       EMMAUS CATHOLIC COLLEGE STEM DEMO LANDING PAGE OVERLAY
+       ======================================================== -->
+  <div id="landingScreen" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl overflow-y-auto flex flex-col justify-between p-4 sm:p-6 transition-all duration-300">
+    <!-- Top Bar with Emmaus College Logo in the corner -->
+    <div class="w-full max-w-2xl mx-auto flex items-center justify-between pb-4 border-b border-slate-800">
+      <div class="flex items-center gap-3">
+        <!-- Emmaus Catholic College Official Crest -->
+        <div class="relative w-12 h-16 sm:w-14 sm:h-20 flex-shrink-0 drop-shadow-[0_4px_12px_rgba(15,82,186,0.4)]">
+          <img src="1789376166990.png" 
+               alt="Emmaus Catholic College Crest" 
+               class="w-full h-full object-contain"
+               onerror="if(this.src.indexOf('emmaus-logo.png') === -1){ this.src='emmaus-logo.png'; } else { this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); }" />
+          <!-- Fallback vector if local PNG is not yet in directory -->
+          <svg viewBox="0 0 160 220" class="hidden w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 8 H148 V126 C148 168 80 206 80 206 C80 206 12 168 12 126 Z" fill="#030712" stroke="#1d4ed8" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M80 110 H145 V126 C145 165 80 202 80 202 Z" fill="#1d4ed8"/>
+            <path d="M80 126 C105 120 110 145 145 142 L144 158 C108 162 98 136 80 144 Z" fill="#ffffff"/>
+            <path d="M80 152 C95 148 112 165 138 175 L132 186 C105 174 92 158 80 162 Z" fill="#ffffff"/>
+            <line x1="80" y1="8" x2="80" y2="204" stroke="#1d4ed8" stroke-width="4"/>
+            <line x1="80" y1="110" x2="148" y2="110" stroke="#1d4ed8" stroke-width="4"/>
+            <path d="M48 22 H54 V46 H76 V56 H54 V160 L48 176 L42 160 V56 H20 V46 H42 V22 H48 Z" fill="#2563eb"/>
+            <path d="M48 36 Q48 51 63 51 Q48 51 48 66 Q48 51 33 51 Q48 51 48 36 Z" fill="#ffffff"/>
+            <path d="M22 112 C28 118 42 118 47 114 V138 C42 135 28 135 22 130 Z" stroke="#ef4444" stroke-width="3" fill="none"/>
+            <path d="M74 112 C68 118 54 118 49 114 V138 C54 135 68 135 74 130 Z" stroke="#ef4444" stroke-width="3" fill="none"/>
+            <circle cx="94" cy="30" r="3.5" fill="#ef4444"/>
+            <path d="M88 44 L94 36 L100 44 M94 36 V70 M90 92 L94 70 L98 92" stroke="#ef4444" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+            <circle cx="112" cy="22" r="3.8" fill="#ef4444"/>
+            <path d="M104 36 L112 28 L120 36 M112 28 V65 M108 88 L112 65 L116 88" stroke="#ef4444" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+            <circle cx="128" cy="34" r="3.2" fill="#ef4444"/>
+            <path d="M122 46 L128 40 L138 46 M128 40 V72 M124 92 L128 72 L132 92" stroke="#ef4444" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+            <circle cx="132" cy="52" r="2.8" fill="#ef4444"/>
+            <path d="M126 62 L132 57 L140 60 M132 57 V78 M128 94 L132 78 L136 94" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <rect x="12" y="174" width="136" height="24" rx="2" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+            <text x="80" y="191" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="800" font-size="14" fill="#1d4ed8" letter-spacing="1">EMMAUS</text>
+            <text x="80" y="213" text-anchor="middle" font-family="'Inter', sans-serif" font-style="italic" font-weight="600" font-size="8.5" fill="#38bdf8">WE WALK WITH JESUS</text>
+          </svg>
+        </div>
+        <div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-950 text-blue-300 border border-blue-800/80 mb-0.5">
+            Emmaus Catholic College
+          </span>
+          <h2 class="text-xs text-slate-300 font-medium">STEM Science & Technology Showcase</h2>
+        </div>
+      </div>
+
+      <!-- Quick badge -->
+      <div class="text-right hidden sm:block">
+        <span class="text-[11px] font-mono font-semibold text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-full border border-cyan-800/50">
+          Year 2026 STEM Project
+        </span>
+      </div>
+    </div>
+
+    <!-- Center Showcase Content -->
+    <div class="w-full max-w-2xl mx-auto my-auto py-6 flex flex-col gap-5">
+      <!-- Title & Hero Tag -->
+      <div class="text-center sm:text-left">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold mb-3">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          Computer Vision • Assistive Healthcare Prototype
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-fredoka font-bold text-white tracking-tight leading-tight">
+          MedScan <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">AI</span>
+        </h1>
+        <p class="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed max-w-xl">
+          An automated optical pill verification system designed to support patient safety and medication compliance.
+        </p>
+      </div>
+
+      <!-- STEM Demonstration Methodology Card -->
+      <div class="bg-slate-900/80 border border-cyan-500/25 rounded-2xl p-4 shadow-lg backdrop-blur-md">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-lg flex-shrink-0">
+            💡
+          </div>
+          <div>
+            <h3 class="text-sm font-fredoka font-bold text-white tracking-wide">
+              STEM Demonstration Methodology
+            </h3>
+            <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+              For classroom safety and hygiene, real pharmaceuticals are strictly substituted with <strong>Skittle color-coded optical surrogates</strong>. The onboard algorithm uses HSV hue-clustering with specular reflection rejection to identify pills and report clinical dosage data in real time.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color-to-Medication Table Grid -->
+      <div>
+        <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span>Active Demonstration Model Matrix</span>
+          <span class="text-[10px] text-cyan-400 font-mono">5 Models Active</span>
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <!-- Red -->
+          <div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/60 border border-red-500/30">
+            <div class="w-4 h-4 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)] flex-shrink-0"></div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="font-fredoka font-bold text-white">Paracetamol</span>
+                <span class="text-[10px] font-mono text-red-300 bg-red-950/80 px-1.5 py-0.5 rounded">500mg</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate">Analgesic & Fever Relief</p>
+            </div>
+          </div>
+          <!-- Orange -->
+          <div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/60 border border-orange-500/30">
+            <div class="w-4 h-4 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.7)] flex-shrink-0"></div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="font-fredoka font-bold text-white">Ibuprofen</span>
+                <span class="text-[10px] font-mono text-orange-300 bg-orange-950/80 px-1.5 py-0.5 rounded">200mg</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate">NSAID Anti-inflammatory</p>
+            </div>
+          </div>
+          <!-- Yellow -->
+          <div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/60 border border-yellow-500/30">
+            <div class="w-4 h-4 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.7)] flex-shrink-0"></div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="font-fredoka font-bold text-white">Aspirin</span>
+                <span class="text-[10px] font-mono text-yellow-300 bg-yellow-950/80 px-1.5 py-0.5 rounded">100mg</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate">Cardio & Pain Therapy</p>
+            </div>
+          </div>
+          <!-- Green -->
+          <div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/60 border border-emerald-500/30">
+            <div class="w-4 h-4 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.7)] flex-shrink-0"></div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="font-fredoka font-bold text-white">Amoxicillin</span>
+                <span class="text-[10px] font-mono text-emerald-300 bg-emerald-950/80 px-1.5 py-0.5 rounded">250mg</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate">Antibiotic Therapy</p>
+            </div>
+          </div>
+          <!-- Purple (spanning on sm) -->
+          <div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/60 border border-purple-500/30 sm:col-span-2">
+            <div class="w-4 h-4 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.7)] flex-shrink-0"></div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="font-fredoka font-bold text-white">Cetirizine</span>
+                <span class="text-[10px] font-mono text-purple-300 bg-purple-950/80 px-1.5 py-0.5 rounded">10mg</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate">Antihistamine / Allergy Relief</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Launch Action Button -->
+      <div class="pt-2 flex flex-col gap-2.5">
+        <button id="startScanFromLandingBtn" class="w-full bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:opacity-95 active:scale-[0.98] text-white font-fredoka font-bold text-base py-3.5 px-6 rounded-2xl shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2.5 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+          <span>Launch Camera Scanner</span>
+        </button>
+        <p class="text-center text-[11px] text-slate-400">
+          Ensure good lighting • Center single pill sample inside the scanning reticle
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer with Emmaus Motto -->
+    <div class="w-full max-w-2xl mx-auto pt-4 border-t border-slate-900 text-center text-xs text-slate-500 flex items-center justify-between">
+      <span>Emmaus Catholic College STEM</span>
+      <span class="italic text-cyan-400 font-medium font-serif">"We Walk With Jesus"</span>
+    </div>
+  </div>
+
+  <header class="fixed top-0 left-0 right-0 z-30 p-3 flex flex-col gap-2 pointer-events-none">
+    <div class="flex items-center justify-between w-full">
+      <div class="pointer-events-auto flex items-center gap-2.5 glass-panel px-3 py-1.5 rounded-full shadow-lg border border-cyan-500/30">
+        <!-- Emmaus College Corner Shield Icon -->
+        <div class="w-7 h-9 flex-shrink-0 drop-shadow-sm">
+          <img src="1789376166990.png" 
+               alt="Emmaus Catholic College Crest" 
+               class="w-full h-full object-contain"
+               onerror="if(this.src.indexOf('emmaus-logo.png') === -1){ this.src='emmaus-logo.png'; } else { this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); }" />
+          <svg viewBox="0 0 160 220" class="hidden w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 8 H148 V126 C148 168 80 206 80 206 C80 206 12 168 12 126 Z" fill="#030712" stroke="#1d4ed8" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M80 110 H145 V126 C145 165 80 202 80 202 Z" fill="#1d4ed8"/>
+            <path d="M80 126 C105 120 110 145 145 142 L144 158 C108 162 98 136 80 144 Z" fill="#ffffff"/>
+            <line x1="80" y1="8" x2="80" y2="204" stroke="#1d4ed8" stroke-width="4"/>
+            <path d="M48 22 H54 V46 H76 V56 H54 V160 L48 176 L42 160 V56 H20 V46 H42 V22 H48 Z" fill="#2563eb"/>
+            <path d="M48 36 Q48 51 63 51 Q48 51 48 66 Q48 51 33 51 Q48 51 48 36 Z" fill="#ffffff"/>
+            <rect x="12" y="174" width="136" height="24" rx="2" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+            <text x="80" y="191" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="800" font-size="14" fill="#1d4ed8">EMMAUS</text>
+          </svg>
+        </div>
+        <div>
+          <h1 class="font-fredoka text-sm font-bold tracking-wide text-white leading-none">MedScan AI</h1>
+          <p class="text-[9px] text-cyan-300 font-semibold uppercase tracking-wider">Emmaus Catholic College</p>
+        </div>
+      </div>
+
+      <!-- Quick action buttons in header -->
+      <div class="pointer-events-auto flex items-center gap-2">
+        <!-- Info / Back to Landing Screen button -->
+        <button id="openLandingBtn" class="glass-panel p-2.5 rounded-full text-slate-200 hover:text-white active:scale-95 transition" title="Project Information & Legend">
+          <svg class="w-5 h-5 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </button>
+
+        <!-- Voice toggle button -->
+        <button id="voiceToggleBtn" class="glass-panel p-2.5 rounded-full text-slate-200 hover:text-white active:scale-95 transition" title="Toggle Voice Announcement">
+          <svg id="voiceIconOn" class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+          </svg>
+          <svg id="voiceIconOff" class="w-5 h-5 text-slate-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+          </svg>
+        </button>
+
+        <!-- Torch / Flash button -->
+        <button id="torchBtn" class="glass-panel p-2.5 rounded-full text-slate-200 hover:text-white active:scale-95 transition" title="Toggle Torch Light">
+          <svg id="torchIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+        </button>
+
+        <!-- Flip Camera button -->
+        <button id="flipCamBtn" class="glass-panel p-2.5 rounded-full text-slate-200 hover:text-white active:scale-95 transition" title="Switch Camera">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEM Prototype Project Notice Banner -->
+    <div class="pointer-events-auto self-center glass-panel px-3 py-1 rounded-full text-[10px] text-cyan-200 border border-cyan-500/20 shadow flex items-center gap-1.5 backdrop-blur-md">
+      <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+      <span><strong>STEM Prototype:</strong> Optical medication scanner demonstration using safe Skittle pill models.</span>
+    </div>
+  </header>
+
+  <main class="relative flex-1 w-full h-screen overflow-hidden bg-black flex items-center justify-center">
+    <!-- Camera stream video element -->
+    <video id="webcam" playsinline autoplay muted class="absolute inset-0 w-full h-full object-cover"></video>
+
+    <!-- Hidden calculation canvas for computer vision pixel sampling -->
+    <canvas id="analysisCanvas" class="hidden"></canvas>
+
+    <!-- Tap instructions / viewfinder overlay -->
+    <div id="reticleContainer" class="absolute pointer-events-none flex flex-col items-center justify-center transition-all duration-300" style="transform: translate(0, 0);">
+      <!-- Reticle target circle -->
+      <div id="reticleRing" class="reticle-ring w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-white/90 relative flex items-center justify-center transition-colors duration-200">
+        <!-- Crosshairs -->
+        <div class="absolute w-2 h-0.5 bg-white/75 -left-3"></div>
+        <div class="absolute w-2 h-0.5 bg-white/75 -right-3"></div>
+        <div class="absolute h-2 w-0.5 bg-white/75 -top-3"></div>
+        <div class="absolute h-2 w-0.5 bg-white/75 -bottom-3"></div>
+
+        <!-- Center sampled preview pip -->
+        <div id="sampledColorPip" class="w-10 h-10 rounded-full border-2 border-white shadow-md transition-all duration-150 flex items-center justify-center text-[10px] font-fredoka font-bold text-white uppercase drop-shadow">
+          Rx
+        </div>
+      </div>
+      <p id="reticleTip" class="mt-3 text-[11px] font-medium tracking-wide text-white/90 bg-black/60 px-3 py-1 rounded-full backdrop-blur-md">
+        Center target pill (Skittle) inside reticle
+      </p>
+    </div>
+
+    <!-- Error/Fallback banner if camera is denied or unavailable -->
+    <div id="cameraPrompt" class="hidden absolute inset-0 z-20 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center">
+      <div class="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        </svg>
+      </div>
+      <h2 class="text-xl font-fredoka font-bold text-white mb-2">Camera Access Required</h2>
+      <p class="text-sm text-slate-300 max-w-xs mb-5 leading-relaxed">
+        To scan and identify your medication model, allow camera permissions or upload an image.
+      </p>
+      <div class="flex flex-col gap-3 w-full max-w-xs">
+        <button id="requestCamBtn" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white font-fredoka font-semibold py-3 px-5 rounded-2xl shadow-lg transition">
+          Enable Camera
+        </button>
+        <label class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-3 px-5 rounded-2xl cursor-pointer text-center text-sm border border-slate-700">
+          Upload Pill Photo Instead
+          <input type="file" id="fileFallbackInput" accept="image/*" class="hidden" />
+        </label>
+      </div>
+    </div>
+  </main>
+
+  <section class="fixed bottom-0 left-0 right-0 z-30 p-3 sm:p-5 flex flex-col items-center pointer-events-none">
+    
+    <!-- Real-time Identified Medication Card -->
+    <div id="resultCard" class="pointer-events-auto w-full max-w-md glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl transition-all duration-300 border border-white/20 mb-3">
+      <div class="flex items-center gap-4">
+        <!-- Pill icon representation -->
+        <div id="candyBadge" class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex-shrink-0 flex items-center justify-center candy-shadow transition-all duration-300 bg-slate-700 border-2 border-white/30">
+          <span id="candyInitial" class="font-fredoka text-xl sm:text-2xl font-bold text-white/90 drop-shadow-md">Rx</span>
+          <!-- Shine highlight effect -->
+          <div class="absolute top-2 left-3 w-5 h-2 rounded-full bg-white/40 rotate-[-25deg] blur-[0.5px]"></div>
+        </div>
+
+        <!-- Medication & Dosage info -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 mb-0.5">
+            <span id="confidenceTag" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              Live Med Scanner
+            </span>
+            <span id="rgbLabel" class="text-[10px] font-mono text-slate-400">RGB: ---</span>
+          </div>
+
+          <h2 id="colorTitle" class="text-xl sm:text-2xl font-fredoka font-bold text-white tracking-tight leading-tight truncate">
+            Aim at Pill Model
+          </h2>
+          <p id="flavorTitle" class="text-xs sm:text-sm font-medium text-cyan-300 flex items-center gap-1.5">
+            <span>💊</span> <span id="flavorText">Position sample inside the ring</span>
+          </p>
+          <p id="subInfoText" class="text-[11px] text-slate-400 mt-0.5 truncate">
+            Model: Skittle optical surrogate
+          </p>
+
+          <!-- Match Meter Bar -->
+          <div class="mt-2 w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden">
+            <div id="matchBar" class="h-full bg-cyan-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons: Hold/Lock & Add to Dispense Log -->
+      <div class="grid grid-cols-2 gap-2.5 mt-3.5 pt-3 border-t border-white/10">
+        <button id="lockScanBtn" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-95 text-xs font-semibold text-white transition">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span id="lockBtnText">Freeze Reading</span>
+        </button>
+
+        <button id="addToBagBtn" class="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 active:scale-95 text-xs font-semibold text-white shadow-md transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          <span>Log Scanned Dose</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Medication Dispense / Inventory counter -->
+    <div class="pointer-events-auto w-full max-w-md glass-panel rounded-2xl px-3 py-2.5 flex flex-col gap-1.5 text-center">
+      <div class="flex items-center justify-between px-1">
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs font-fredoka font-bold text-slate-300">Medication Logged:</span>
+          <span id="totalBagCount" class="text-xs font-bold text-cyan-400 bg-cyan-950/70 px-2 py-0.5 rounded-full border border-cyan-500/30">0</span>
+        </div>
+        <!-- Reset bag count button -->
+        <button id="resetBagBtn" class="text-slate-400 hover:text-red-400 p-1 rounded-lg transition flex items-center gap-1 text-[11px]" title="Reset counts">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+          <span>Clear</span>
+        </button>
+      </div>
+
+      <!-- 5 Medication Pills -->
+      <div class="grid grid-cols-5 gap-1.5 text-[10px]">
+        <!-- Red: Paracetamol -->
+        <button class="tally-pill flex flex-col items-center p-1.5 rounded-xl bg-red-950/60 border border-red-500/40 text-red-300 hover:bg-red-900/60 transition" data-candy="red" title="Paracetamol 500mg">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-500 mb-0.5"></span>
+          <span class="font-bold truncate w-full">Para.</span>
+          <span id="count-red" class="font-mono font-bold text-white">0</span>
+        </button>
+        <!-- Orange: Ibuprofen -->
+        <button class="tally-pill flex flex-col items-center p-1.5 rounded-xl bg-amber-950/60 border border-orange-500/40 text-orange-300 hover:bg-amber-900/60 transition" data-candy="orange" title="Ibuprofen 200mg">
+          <span class="w-2.5 h-2.5 rounded-full bg-orange-500 mb-0.5"></span>
+          <span class="font-bold truncate w-full">Ibup.</span>
+          <span id="count-orange" class="font-mono font-bold text-white">0</span>
+        </button>
+        <!-- Yellow: Aspirin -->
+        <button class="tally-pill flex flex-col items-center p-1.5 rounded-xl bg-yellow-950/60 border border-yellow-500/40 text-yellow-300 hover:bg-yellow-900/60 transition" data-candy="yellow" title="Aspirin 100mg">
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 mb-0.5"></span>
+          <span class="font-bold truncate w-full">Asp.</span>
+          <span id="count-yellow" class="font-mono font-bold text-white">0</span>
+        </button>
+        <!-- Green: Amoxicillin -->
+        <button class="tally-pill flex flex-col items-center p-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60 transition" data-candy="green" title="Amoxicillin 250mg">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mb-0.5"></span>
+          <span class="font-bold truncate w-full">Amox.</span>
+          <span id="count-green" class="font-mono font-bold text-white">0</span>
+        </button>
+        <!-- Purple: Cetirizine -->
+        <button class="tally-pill flex flex-col items-center p-1.5 rounded-xl bg-purple-950/60 border border-purple-500/40 text-purple-300 hover:bg-purple-900/60 transition" data-candy="purple" title="Cetirizine 10mg">
+          <span class="w-2.5 h-2.5 rounded-full bg-purple-600 mb-0.5"></span>
+          <span class="font-bold truncate w-full">Cetir.</span>
+          <span id="count-purple" class="font-mono font-bold text-white">0</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    /* ----------------------------------------------------
+     * STEM PROJECT MEDICATION RECOGNITION DATABASE
+     * Using Skittles as safe optical surrogates for pills:
+     * - Red: Paracetamol 500mg (Analgesic / Antipyretic)
+     * - Orange: Ibuprofen 200mg (NSAID / Anti-inflammatory)
+     * - Yellow: Aspirin 100mg (Antiplatelet / Pain relief)
+     * - Green: Amoxicillin 250mg (Antibacterial / Penicillin)
+     * - Purple: Cetirizine 10mg (Antihistamine / Allergy relief)
+     * ---------------------------------------------------- */
+    const SKITTLE_FLAVORS = {
+      red: {
+        id: 'red',
+        name: 'Paracetamol',
+        dosage: '500 mg',
+        flavor: 'Paracetamol (500mg) - Pain & Fever Relief',
+        indication: 'Analgesic & Antipyretic',
+        candyColor: 'Red Skittle surrogate',
+        colorHex: '#ef4444',
+        bgGradient: 'radial-gradient(circle at 35% 35%, #ff5252, #b91c1c)',
+        tagBg: 'bg-red-500/20 text-red-300 border-red-500/40',
+        funFact: 'Common pain reliever and fever reducer.'
+      },
+      orange: {
+        id: 'orange',
+        name: 'Ibuprofen',
+        dosage: '200 mg',
+        flavor: 'Ibuprofen (200mg) - Anti-inflammatory',
+        indication: 'NSAID / Pain & Swelling',
+        candyColor: 'Orange Skittle surrogate',
+        colorHex: '#f97316',
+        bgGradient: 'radial-gradient(circle at 35% 35%, #fb923c, #c2410c)',
+        tagBg: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+        funFact: 'Non-steroidal anti-inflammatory drug.'
+      },
+      yellow: {
+        id: 'yellow',
+        name: 'Aspirin',
+        dosage: '100 mg',
+        flavor: 'Aspirin (100mg) - Cardio & Pain Relief',
+        indication: 'Antiplatelet & Analgesic',
+        candyColor: 'Yellow Skittle surrogate',
+        colorHex: '#eab308',
+        bgGradient: 'radial-gradient(circle at 35% 35%, #fde047, #a16207)',
+        tagBg: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
+        funFact: 'Low-dose acetylsalicylic acid therapy.'
+      },
+      green: {
+        id: 'green',
+        name: 'Amoxicillin',
+        dosage: '250 mg',
+        flavor: 'Amoxicillin (250mg) - Antibiotic',
+        indication: 'Broad-Spectrum Antibacterial',
+        candyColor: 'Green Skittle surrogate',
+        colorHex: '#22c55e',
+        bgGradient: 'radial-gradient(circle at 35% 35%, #4ade80, #15803d)',
+        tagBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        funFact: 'Penicillin-class antibiotic model.'
+      },
+      purple: {
+        id: 'purple',
+        name: 'Cetirizine',
+        dosage: '10 mg',
+        flavor: 'Cetirizine (10mg) - Antihistamine',
+        indication: 'Allergy & Hay Fever Relief',
+        candyColor: 'Purple Skittle surrogate',
+        colorHex: '#9333ea',
+        bgGradient: 'radial-gradient(circle at 35% 35%, #c084fc, #581c87)',
+        tagBg: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+        funFact: 'Second-generation non-drowsy antihistamine.'
+      }
+    };
+
+    // Bag / Dispense counters
+    const bagCounts = {
+      red: 0,
+      orange: 0,
+      yellow: 0,
+      green: 0,
+      purple: 0
+    };
+
+    let videoStream = null;
+    let currentFacingMode = 'environment'; // default to back phone camera
+    let isTorchOn = false;
+    let isSpeechEnabled = true;
+    let isLocked = false;
+    let lastSpokenCandyId = null;
+    let speechCooldownTimer = null;
+    let lastIdentifiedCandy = null;
+
+    // Reticle coordinates (default to center of screen)
+    let reticlePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+    const webcamEl = document.getElementById('webcam');
+    const analysisCanvas = document.getElementById('analysisCanvas');
+    const analysisCtx = analysisCanvas.getContext('2d', { willReadFrequently: true });
+    const reticleContainer = document.getElementById('reticleContainer');
+    const sampledColorPip = document.getElementById('sampledColorPip');
+    const candyBadge = document.getElementById('candyBadge');
+    const candyInitial = document.getElementById('candyInitial');
+    const colorTitle = document.getElementById('colorTitle');
+    const flavorText = document.getElementById('flavorText');
+    const subInfoText = document.getElementById('subInfoText');
+    const rgbLabel = document.getElementById('rgbLabel');
+    const confidenceTag = document.getElementById('confidenceTag');
+    const matchBar = document.getElementById('matchBar');
+    const lockScanBtn = document.getElementById('lockScanBtn');
+    const lockBtnText = document.getElementById('lockBtnText');
+    const addToBagBtn = document.getElementById('addToBagBtn');
+    const flipCamBtn = document.getElementById('flipCamBtn');
+    const torchBtn = document.getElementById('torchBtn');
+    const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+    const voiceIconOn = document.getElementById('voiceIconOn');
+    const voiceIconOff = document.getElementById('voiceIconOff');
+    const cameraPrompt = document.getElementById('cameraPrompt');
+    const requestCamBtn = document.getElementById('requestCamBtn');
+    const fileFallbackInput = document.getElementById('fileFallbackInput');
+    const resetBagBtn = document.getElementById('resetBagBtn');
+    const totalBagCount = document.getElementById('totalBagCount');
+    const landingScreen = document.getElementById('landingScreen');
+    const startScanFromLandingBtn = document.getElementById('startScanFromLandingBtn');
+    const openLandingBtn = document.getElementById('openLandingBtn');
+
+    // Show / Hide Landing Page transitions
+    startScanFromLandingBtn.addEventListener('click', () => {
+      landingScreen.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        landingScreen.classList.add('hidden');
+      }, 300);
+      // Start camera after user gesture (satisfies mobile autoplay security)
+      startCamera();
+    });
+
+    openLandingBtn.addEventListener('click', () => {
+      landingScreen.classList.remove('hidden');
+      // Force reflow for smooth fade-in
+      void landingScreen.offsetWidth;
+      landingScreen.classList.remove('opacity-0', 'pointer-events-none');
+    });
+
+    /**
+     * Converts standard RGB (0-255) to HSV (Hue 0-360, Sat 0-1, Val 0-1)
+     */
+    function rgbToHsv(r, g, b) {
+      r /= 255;
+      g /= 255;
+      b /= 255;
+
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const d = max - min;
+      let h = 0;
+      const s = max === 0 ? 0 : d / max;
+      const v = max;
+
+      if (max !== min) {
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0);
+            break;
+          case g:
+            h = (b - r) / d + 2;
+            break;
+          case b:
+            h = (r - g) / d + 4;
+            break;
+        }
+        h /= 6;
+      }
+      return { h: h * 360, s: s, v: v };
+    }
+
+    /**
+     * Identifies which Skittle color best matches the sampled HSV & RGB values.
+     * Incorporates glare rejection and surface thresholding.
+     */
+    function classifySkittleColor(r, g, b) {
+      const { h, s, v } = rgbToHsv(r, g, b);
+
+      // Check if scene is excessively dark or washed-out white
+      if (v < 0.15) {
+        return { isSkittle: false, reason: 'Too dark' };
+      }
+      if (s < 0.16 && v > 0.65) {
+        return { isSkittle: false, reason: 'Too pale / white surface' };
+      }
+      if (s < 0.18) {
+        return { isSkittle: false, reason: 'Low saturation' };
+      }
+
+      let detectedKey = null;
+      let confidence = 0;
+
+      // Color boundary logic calibrated for Skittle shells under various indoor & outdoor light:
+      // RED: Hue around 350°-360° or 0°-16°
+      // ORANGE: Hue around 17°-43°
+      // YELLOW: Hue around 44°-68°
+      // GREEN: Hue around 72°-165°
+      // PURPLE: Hue around 260°-345° with Red/Blue presence
+      if (h >= 350 || h < 16) {
+        detectedKey = 'red';
+        confidence = Math.min(100, Math.round(s * 80 + v * 20));
+      } else if (h >= 16 && h < 44) {
+        detectedKey = 'orange';
+        confidence = Math.min(100, Math.round(s * 75 + v * 25));
+      } else if (h >= 44 && h < 69) {
+        detectedKey = 'yellow';
+        confidence = Math.min(100, Math.round(s * 70 + v * 30));
+      } else if (h >= 69 && h < 165) {
+        detectedKey = 'green';
+        confidence = Math.min(100, Math.round(s * 80 + v * 20));
+      } else if (h >= 250 && h < 345) {
+        detectedKey = 'purple';
+        // Purple candies are darker violet-red
+        confidence = Math.min(100, Math.round(s * 85 + (1 - v) * 20));
+      } else if (h >= 165 && h < 250) {
+        // Cyan / Blue is typical for Tropical / Wildberry packs, classify closest to purple
+        detectedKey = 'purple';
+        confidence = 65;
+      }
+
+      if (detectedKey && SKITTLE_FLAVORS[detectedKey]) {
+        return {
+          isSkittle: true,
+          candy: SKITTLE_FLAVORS[detectedKey],
+          confidence: Math.max(50, confidence),
+          h, s, v
+        };
+      }
+
+      return { isSkittle: false, reason: 'Aligning color...' };
+    }
+
+    /**
+     * Gathers a grid of pixels inside the reticle, rejecting specular glare & deep shadows
+     */
+    function sampleReticlePixels() {
+      if (!webcamEl.videoWidth || !webcamEl.videoHeight) return null;
+
+      // Sync hidden canvas dimensions
+      if (analysisCanvas.width !== webcamEl.videoWidth || analysisCanvas.height !== webcamEl.videoHeight) {
+        analysisCanvas.width = webcamEl.videoWidth;
+        analysisCanvas.height = webcamEl.videoHeight;
+      }
+
+      // Draw active frame to calculation canvas
+      analysisCtx.drawImage(webcamEl, 0, 0, analysisCanvas.width, analysisCanvas.height);
+
+      // Convert reticle screen coordinate to canvas coordinate
+      const rect = webcamEl.getBoundingClientRect();
+      const scaleX = analysisCanvas.width / rect.width;
+      const scaleY = analysisCanvas.height / rect.height;
+
+      const sampleCenterX = (reticlePos.x - rect.left) * scaleX;
+      const sampleCenterY = (reticlePos.y - rect.top) * scaleY;
+
+      // Sample radius (around 16 pixels on video scale)
+      const radius = Math.round(Math.min(analysisCanvas.width, analysisCanvas.height) * 0.035);
+      const startX = Math.max(0, Math.floor(sampleCenterX - radius));
+      const startY = Math.max(0, Math.floor(sampleCenterY - radius));
+      const width = Math.min(analysisCanvas.width - startX, radius * 2);
+      const height = Math.min(analysisCanvas.height - startY, radius * 2);
+
+      if (width <= 0 || height <= 0) return null;
+
+      const imgData = analysisCtx.getImageData(startX, startY, width, height).data;
+
+      // Collect valid pixels with glare/shadow filtering
+      const validPixels = [];
+      for (let i = 0; i < imgData.length; i += 4) {
+        const r = imgData[i];
+        const g = imgData[i + 1];
+        const b = imgData[i + 2];
+        const brightness = (r + g + b) / 3;
+
+        // Reject pure white reflection glare (>245) or deep shadows (<20)
+        if (brightness > 245 || brightness < 20) continue;
+
+        validPixels.push({ r, g, b, brightness });
+      }
+
+      if (validPixels.length === 0) return null;
+
+      // Average the clean non-glare pixels
+      let sumR = 0, sumG = 0, sumB = 0;
+      for (let i = 0; i < validPixels.length; i++) {
+        sumR += validPixels[i].r;
+        sumG += validPixels[i].g;
+        sumB += validPixels[i].b;
+      }
+
+      return {
+        r: Math.round(sumR / validPixels.length),
+        g: Math.round(sumG / validPixels.length),
+        b: Math.round(sumB / validPixels.length)
+      };
+    }
+
+    function updateUIWithResult(rgb) {
+      if (!rgb) return;
+
+      const hex = `#${((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1)}`;
+      sampledColorPip.style.backgroundColor = hex;
+      rgbLabel.textContent = `RGB: ${rgb.r}, ${rgb.g}, ${rgb.b}`;
+
+      const result = classifySkittleColor(rgb.r, rgb.g, rgb.b);
+
+      if (result.isSkittle && result.candy) {
+        const candy = result.candy;
+        lastIdentifiedCandy = candy;
+
+        colorTitle.textContent = candy.name;
+        flavorText.textContent = `${candy.dosage} - ${candy.indication}`;
+        if (subInfoText) {
+          subInfoText.textContent = `Demo surrogate: ${candy.candyColor}`;
+        }
+        confidenceTag.textContent = `${result.confidence}% Match`;
+        confidenceTag.className = 'text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/25 text-cyan-300 border border-cyan-500/40';
+
+        candyBadge.style.background = candy.bgGradient;
+        matchBar.style.width = `${result.confidence}%`;
+        matchBar.style.backgroundColor = candy.colorHex;
+
+        // Vibrate gently on new detection if supported
+        if (lastSpokenCandyId !== candy.id && navigator.vibrate) {
+          navigator.vibrate(40);
+        }
+
+        // Trigger voice announcement
+        triggerVoiceFeedback(candy);
+      } else {
+        confidenceTag.textContent = 'Scanning...';
+        confidenceTag.className = 'text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600';
+        matchBar.style.width = '15%';
+        matchBar.style.backgroundColor = '#06b6d4';
+        flavorText.textContent = result.reason || 'Point ring directly at pill sample';
+        if (subInfoText) {
+          subInfoText.textContent = 'STEM Demo: Safe Skittle pill models';
+        }
+      }
+    }
+
+    /**
+     * Speaks the identified medication name and dosage
+     */
+    function triggerVoiceFeedback(candy) {
+      if (!isSpeechEnabled || !window.speechSynthesis) return;
+      if (lastSpokenCandyId === candy.id) return;
+
+      lastSpokenCandyId = candy.id;
+      clearTimeout(speechCooldownTimer);
+
+      // Cancel ongoing utterances
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(`Identified: ${candy.name}, ${candy.dosage}. Indication: ${candy.indication}.`);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      // Select voice
+      const voices = window.speechSynthesis.getVoices();
+      const naturalVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
+      if (naturalVoice) utterance.voice = naturalVoice;
+
+      window.speechSynthesis.speak(utterance);
+
+      // Allow speaking again after 4 seconds
+      speechCooldownTimer = setTimeout(() => {
+        lastSpokenCandyId = null;
+      }, 4000);
+    }
+
+    async function startCamera() {
+      try {
+        if (videoStream) {
+          videoStream.getTracks().forEach(track => track.stop());
+        }
+
+        const constraints = {
+          video: {
+            facingMode: { ideal: currentFacingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        webcamEl.srcObject = videoStream;
+        cameraPrompt.classList.add('hidden');
+
+        // Check if torch/flash is supported on track
+        const track = videoStream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        if (!capabilities.torch) {
+          torchBtn.style.opacity = '0.5';
+        } else {
+          torchBtn.style.opacity = '1';
+        }
+      } catch (err) {
+        console.warn('Camera stream error:', err);
+        cameraPrompt.classList.remove('hidden');
+      }
+    }
+
+    function runScanLoop() {
+      if (!isLocked && webcamEl.readyState >= 2) {
+        const rgb = sampleReticlePixels();
+        if (rgb) {
+          updateUIWithResult(rgb);
+        }
+      }
+      requestAnimationFrame(runScanLoop);
+    }
+
+    // Allow users to tap anywhere on screen to reposition the candy sample ring
+    webcamEl.addEventListener('pointerdown', (e) => {
+      const rect = webcamEl.getBoundingClientRect();
+      const clickX = e.clientX;
+      const clickY = e.clientY;
+
+      // Don't reposition if clicking near bottom control panels
+      if (clickY > window.innerHeight - 240 || clickY < 75) return;
+
+      reticlePos.x = clickX;
+      reticlePos.y = clickY;
+
+      // Translate reticle container
+      const offsetX = clickX - (window.innerWidth / 2);
+      const offsetY = clickY - (window.innerHeight / 2);
+      reticleContainer.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+    });
+
+    // Flip front/rear camera
+    flipCamBtn.addEventListener('click', () => {
+      currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+      startCamera();
+    });
+
+    // Toggle Torch/Flashlight
+    torchBtn.addEventListener('click', async () => {
+      if (!videoStream) return;
+      const track = videoStream.getVideoTracks()[0];
+      if (!track || !track.applyConstraints) return;
+
+      try {
+        isTorchOn = !isTorchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: isTorchOn }]
+        });
+        torchBtn.classList.toggle('text-amber-400', isTorchOn);
+      } catch (e) {
+        console.warn('Torch failed or not supported:', e);
+      }
+    });
+
+    // Toggle Voice narration
+    voiceToggleBtn.addEventListener('click', () => {
+      isSpeechEnabled = !isSpeechEnabled;
+      voiceIconOn.classList.toggle('hidden', !isSpeechEnabled);
+      voiceIconOff.classList.toggle('hidden', isSpeechEnabled);
+      if (!isSpeechEnabled && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    });
+
+    // Freeze / Unfreeze reading
+    lockScanBtn.addEventListener('click', () => {
+      isLocked = !isLocked;
+      if (isLocked) {
+        lockBtnText.textContent = 'Resume Scanner';
+        lockScanBtn.classList.add('bg-amber-500/30', 'text-amber-300');
+      } else {
+        lockBtnText.textContent = 'Freeze Reading';
+        lockScanBtn.classList.remove('bg-amber-500/30', 'text-amber-300');
+      }
+    });
+
+    function updateBagDisplay() {
+      let total = 0;
+      for (const key of Object.keys(bagCounts)) {
+        const count = bagCounts[key];
+        total += count;
+        const el = document.getElementById(`count-${key}`);
+        if (el) el.textContent = count;
+      }
+      totalBagCount.textContent = total;
+    }
+
+    addToBagBtn.addEventListener('click', () => {
+      if (!lastIdentifiedCandy) return;
+      bagCounts[lastIdentifiedCandy.id]++;
+      updateBagDisplay();
+
+      // Fun button bounce feedback
+      addToBagBtn.classList.add('scale-95');
+      setTimeout(() => addToBagBtn.classList.remove('scale-95'), 120);
+      if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+    });
+
+    // Tapping pills allows manual count increment
+    document.querySelectorAll('.tally-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const candyKey = pill.dataset.candy;
+        if (candyKey && bagCounts[candyKey] !== undefined) {
+          bagCounts[candyKey]++;
+          updateBagDisplay();
+        }
+      });
+    });
+
+    resetBagBtn.addEventListener('click', () => {
+      for (const key of Object.keys(bagCounts)) {
+        bagCounts[key] = 0;
+      }
+      updateBagDisplay();
+    });
+
+    // Fallback photo upload for devices without direct stream access
+    fileFallbackInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.onload = () => {
+        analysisCanvas.width = img.width;
+        analysisCanvas.height = img.height;
+        analysisCtx.drawImage(img, 0, 0);
+        cameraPrompt.classList.add('hidden');
+
+        // Sample center of uploaded picture
+        const centerX = img.width / 2;
+        const centerY = img.height / 2;
+        const data = analysisCtx.getImageData(centerX - 10, centerY - 10, 20, 20).data;
+
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+        updateUIWithResult({
+          r: Math.round(r / count),
+          g: Math.round(g / count),
+          b: Math.round(b / count)
+        });
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    requestCamBtn.addEventListener('click', startCamera);
+
+    window.addEventListener('load', () => {
+      // Position reticle initially in exact center
+      reticlePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      
+      // Begin continuous computer-vision frame loop
+      requestAnimationFrame(runScanLoop);
+      
+      // Pre-warm SpeechSynthesis API
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.getVoices();
+        };
+      }
+    });
+
+    // Handle screen rotation / resizing
+    window.addEventListener('resize', () => {
+      reticlePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      reticleContainer.style.transform = 'translate(0px, 0px)';
+    });
+  </script>
+</body>
+</html>
+```
